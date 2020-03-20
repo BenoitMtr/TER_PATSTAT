@@ -1,0 +1,23 @@
+<html>
+
+<head>
+    <title>PatStat</title>
+    <meta charset="UTF-8" />
+</head>
+
+<body>
+    <script>
+        window.onload = async _ => {
+            try {
+                const j = await fetch('http://localhost:8080/api/getNuts');
+                console.log(j);
+                const f = await j.text();
+                console.log(f);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+    </script>
+</body>
+
+</html>
