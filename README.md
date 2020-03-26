@@ -1,5 +1,7 @@
 # TER_PATSTAT
 ## Installer OpenLayers
+`cd TER_PATSTAT/Front`
+
 `npm install ol`
 ## Ajouter les dépendances de développement nécessaires
 `npm install --save-dev parcel-bundler`
