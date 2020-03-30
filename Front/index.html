@@ -3,12 +3,23 @@
 <head>
     <title>PatStat</title>
     <meta charset="UTF-8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/css/ol.css" type="text/css">
     <style>
-        #map {
+        /* Enleve les bordures blanches */
+        body,
+        div#map {
+            left: 0;
+            top: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        div#map {
             width: 100%;
             height: 100%;
         }
-        #marker {
+
+        div#marker {
             width: 20px;
             height: 20px;
             border: 1px solid #088;
@@ -16,23 +27,19 @@
             background-color: #0FF;
             opacity: 0.5;
         }
+
+        input#addVec {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+        }
     </style>
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/build/ol.js"></script>
 </head>
 
 <body>
-    <script>
-        window.onload = async _ => {
-            try {
-                const j = await fetch('http://localhost:8080/api/getNuts');
-                console.log(j);
-                const f = await j.text();
-                console.log(f);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-    </script>
     <div id="map"></div>
+    <input id="addVec" type="text" />
     <div style="display: none;">
         <a class="overlay" id="brevetX" href="brevet.html">brevetX</a>
         <div id="marker" title="Marker"></div>
