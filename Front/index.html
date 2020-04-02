@@ -3,6 +3,7 @@
 <head>
     <title>PatStat</title>
     <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/build/ol.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/css/ol.css" type="text/css">
     <style>
         /* Enleve les bordures blanches */
@@ -19,6 +20,54 @@
             height: 100%;
         }
 
+        table#listOverlay {
+            position: fixed;
+            opacity: 1;
+            right: 25px;
+            top: 80px;
+            background-color: #2200FF22;
+            width: 100px;
+        }
+
+        div#interface {
+            position: fixed;
+            opacity: 1;
+            left: 5px;
+        }
+
+        table#listNuts {
+            position: inherit;
+            top: 80px;
+            background-color: #2200FF22;
+            width: 300px;
+        }
+
+        table#listNuts thead,
+        table#listNuts tfoot {
+            display: block;
+            background-color: #2200FF55;
+        }
+
+        table#listNuts tr td:nth-child(3),
+        table#listNuts tfoot tr td:nth-child(4) {
+            background-color: white;
+            text-align: center;
+        }
+
+        table#listNuts tbody tr:nth-child(odd) {
+            background-color: #0022FF22;
+        }
+
+        table#listNuts tbody tr:hover {
+            background-color: white;
+        }
+
+        table#listNuts tbody {
+            display: block;
+            height: 800px;
+            overflow-y: scroll;
+        }
+
         div#marker {
             width: 20px;
             height: 20px;
@@ -27,19 +76,45 @@
             background-color: #0FF;
             opacity: 0.5;
         }
-
-        input#addVec {
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-        }
     </style>
-    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/build/ol.js"></script>
 </head>
 
 <body>
     <div id="map"></div>
-    <input id="addVec" type="text" />
+    <div id="interface">
+        <table id="listNuts" border=1>
+            <thead>
+                <tr>
+                    <td width="10%">Code</td>
+                    <td width="60%">Nom</td>
+                    <td width="10%">SB</td>
+                    <td width="10%">HL</td>
+                    <td width="10%">Focus</td>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
+                    <td width="20%">Up</td>
+                    <td width="20%">Down</td>
+                    <td width="10%" id="totalNuts">0</td>
+                    <td width="10%" id="totalSubNuts">0</td>
+                    <td width="40%"><button style="width: 100%" onclick="backBtn()">Back</button></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <table id="listOverlay" border=1>
+        <thead>
+            <tr>
+                <td>Code</td>
+                <td>Remove</td>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
     <div style="display: none;">
         <a class="overlay" id="brevetX" href="brevet.html">brevetX</a>
         <div id="marker" title="Marker"></div>
