@@ -14,7 +14,7 @@ const { log, error } = console;
 const db_con = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'root',
+    password: 'ter_patstat',
     database: 'patstat2018b'
 });
 
@@ -76,4 +76,24 @@ app.get('/api/getGeometry/:code', async (req, res) => {
         res.statusCode = 500;
         res.send("{ error : '" + err + "'}");
     }
+});
+
+app.get('/api/getBrevets/:code', async (req, res) => {
+   const sql = `SELECT DISTINCT c.person_name,c.nuts,c.nuts_level, t.appln_title, a.* 
+   FROM
+   (tls201_appln a INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id) 
+   INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
+   INNER JOIN tls906_person c ON b.person_id=c.person_id WHERE c.nuts='${req.params.code}'`;
+
+    res.setHeader('Content-Type', 'text/json');
+    db_con.query(sql, (err, result) => {
+        if (err) {
+            error(err);
+            res.statusCode = 500;
+            res.send("{ error : '" + err + "'}");
+        } else {
+            res.statusCode = 200;
+            res.send(JSON.stringify(result));
+        }
+    });
 });

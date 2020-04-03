@@ -43,7 +43,9 @@
         }
 
         table#listNuts thead,
-        table#listNuts tfoot {
+        table#listNuts tfoot,
+		table#listBrevets thead,
+		table#listBrevets tfoot	{
             display: block;
             background-color: #2200FF55;
         }
@@ -58,16 +60,24 @@
             background-color: #0022FF22;
         }
 
-        table#listNuts tbody tr:hover {
+        table#listNuts tbody tr:hover, table#listBrevets tbody tr:hover {
             background-color: white;
         }
 
-        table#listNuts tbody {
+        table#listNuts tbody, table#listBrevets tbody {
             display: block;
             height: 800px;
             overflow-y: scroll;
         }
 
+		table#listBrevets {
+			visibility:hidden;
+            position: inherit;
+            top: 80px;
+            background-color: #2200FF22;
+            width: 300px;
+        }
+		
         div#marker {
             width: 20px;
             height: 20px;
@@ -86,10 +96,12 @@
             <thead>
                 <tr>
                     <td width="10%">Code</td>
-                    <td width="60%">Nom</td>
+                    <td width="50%">Nom</td>
                     <td width="10%">SB</td>
                     <td width="10%">HL</td>
-                    <td width="10%">Focus</td>
+                    <td width="5%">Focus</td>
+					<td width="5%">Nombre de brevets</td>
+					<td width="10%">Brevets</td>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -99,6 +111,22 @@
                     <td width="20%">Down</td>
                     <td width="10%" id="totalNuts">0</td>
                     <td width="10%" id="totalSubNuts">0</td>
+                    <td width="40%"><button style="width: 100%" onclick="backBtn()">Back</button></td>
+                </tr>
+            </tfoot>
+        </table>
+		<table id="listBrevets" border=1>
+            <thead>
+                <tr>
+                    <td width="10%">ID</td>
+                    <td width="30%">Applicant</td>
+					<td width="40%">Titre du brevet</td>
+                    <td width="20%">Date de dépôt</td>
+                </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+                <tr>
                     <td width="40%"><button style="width: 100%" onclick="backBtn()">Back</button></td>
                 </tr>
             </tfoot>
