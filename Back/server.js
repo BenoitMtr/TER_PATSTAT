@@ -45,12 +45,12 @@ app.get('/api/getNuts/:level?/:code?', (req, res) => {
         FROM tls904_nuts AS subnut
         WHERE subnut.nuts_level = ${level+1}
         AND subnut.nuts LIKE CONCAT(n.nuts, '%')
-        AND subnut.nuts IN ('${nuts_gps[level+1].join("','")}')
-        ) as nb_subnut
+        ) as nb_subnut, (
+            SELECT code IN ('${nuts_gps[level].join("','")}')
+        ) as has_gps
         FROM tls904_nuts as n
         WHERE n.nuts_level = ${level}
-        AND n.nuts like '${code}%'
-        AND n.nuts IN ('${nuts_gps[level].join("','")}')`;
+        AND n.nuts like '${code}%'`;
 
     res.setHeader('Content-Type', 'text/json');
     db_con.query(sql, (err, result) => {
@@ -79,7 +79,7 @@ app.get('/api/getGeometry/:code', async (req, res) => {
 });
 
 app.get('/api/getBrevets/:code', async (req, res) => {
-   const sql = `SELECT DISTINCT c.person_name,c.nuts,c.nuts_level, t.appln_title, a.* 
+    const sql = `SELECT DISTINCT c.person_name,c.nuts,c.nuts_level, t.appln_title, a.* 
    FROM
    (tls201_appln a INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id) 
    INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
