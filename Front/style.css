@@ -1,0 +1,86 @@
+/* Enleve les bordures blanches */
+body,
+div#map {
+    left: 0;
+    top: 0;
+    margin: 0;
+    padding: 0;
+}
+
+div#map {
+    width: 100%;
+    height: 100%;
+}
+
+table#listOverlay {
+    position: fixed;
+    opacity: 1;
+    right: 25px;
+    top: 80px;
+    background-color: #2200FF22;
+    width: 100px;
+}
+
+div#interface {
+    position: fixed;
+    opacity: 1;
+    left: 5px;
+}
+
+table#listNuts {
+    position: inherit;
+    top: 80px;
+    background-color: #2200FF22;
+    width: 300px;
+}
+
+table#listNuts thead,
+table#listNuts tfoot,
+table#listBrevets thead,
+table#listBrevets tfoot {
+    display: block;
+    background-color: #2200FF55;
+}
+
+table#listNuts tr td:nth-child(3),
+table#listNuts tfoot tr td:nth-child(4) {
+    background-color: white;
+    text-align: center;
+}
+
+tfoot tr td button {
+    width: 100%;
+}
+
+table#listNuts tbody tr:nth-child(odd) {
+    background-color: #0022FF22;
+}
+
+table#listNuts tbody tr:hover,
+table#listBrevets tbody tr:hover {
+    background-color: white;
+}
+
+table#listNuts tbody,
+table#listBrevets tbody {
+    display: block;
+    height: 800px;
+    overflow-y: scroll;
+}
+
+table#listBrevets {
+    visibility: hidden;
+    position: inherit;
+    top: 80px;
+    background-color: #2200FF22;
+    width: 300px;
+}
+
+div#marker {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #088;
+    border-radius: 10px;
+    background-color: #0FF;
+    opacity: 0.5;
+}
