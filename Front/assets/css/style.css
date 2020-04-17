@@ -43,6 +43,7 @@ table#listBrevets tfoot {
 }
 
 table#listNuts tr td:nth-child(3),
+table#listNuts tr td:nth-child(6),
 table#listNuts tfoot tr td:nth-child(4) {
     background-color: white;
     text-align: center;
@@ -64,7 +65,7 @@ table#listBrevets tbody tr:hover {
 table#listNuts tbody,
 table#listBrevets tbody {
     display: block;
-    height: 800px;
+    max-height: 800px;
     overflow-y: scroll;
 }
 
