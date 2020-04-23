@@ -17,12 +17,22 @@ let map;
 const $ = e => document.querySelectorAll(e);
 
 window.onload = _ => {
+    listNuts().then(idx => {
+        updateTbody(nutsCache.get(idx));
+        getNbBrevets(idx);
+        for (let i = 0; i < 4; i++)
+            fetchGeoJSON(i);
+    });
     $('table#listNuts tfoot tr td button, table#listBrevets tfoot tr td button').forEach(elt => elt.onclick = _ => backBtn());
     map = new CustomMap($('div#map')[0]);
-    listNuts();
 
-    fetchGeoJSON();
+    document.body.onkeydown = evt => {
+        if (evt.key === "Escape") {
+            backBtn();
+        }
+    };
 };
+
 
 function updateTbody(nuts) {
     const tbody = $('table#listNuts tbody')[0];
@@ -31,24 +41,28 @@ function updateTbody(nuts) {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${n.code}</td>
                         <td>${n.label}</td>
-                        <td>${n.nb_subnut}</td>
+                        <td><label>${n.nb_subnut}</label></td>
                         <td><button>Add</button></td>
                         <td><button>F</button></td>
-						<td><label>${brevetsCache[n.code].length}</label></td>
+						<td><label id='nbBrevet${n.code}'>${n.nb_brevet||0}</label></td>
 				        <td><button>Liste de brevets</button></td>`;
-        tr.children[4].children[0].onclick = _ => listNuts(n.code, n.level + 1);
-        tr.children[6].children[0].onclick = _ => displayListBrevets(brevetsCache[n.code]);
-        if (n.has_gps) {
-            tr.children[3].children[0].onclick = _ => {
-                map.showKML(`${server_url}/api/getGeometry/${n.code}`, n.code);
-                addVec(n.code, _ => map.hideKML(n.code));
-            };
-            tr.onmouseenter = _ => map.highlight(n.code, brevetsCache[n.code].length);
-            tr.onmouseleave = _ => map.unhighlight(n.code);
-        } else {
-            tr.children[3].children[0].onclick = _ => alert("No gps for this NUTS");
-            tr.style.backgroundColor = '#FF000033';
-        }
+        tr.children[4].children[0].onclick = async _ => updateTbody(nutsCache.get(await listNuts(n.code, n.level + 1)));
+        tr.children[6].children[0].onclick = _ => displayListBrevets(n.code);
+        let trVec;
+        tr.onmouseenter = _ => {
+            map.highlight(n.code, n.level, n.nb_brevet || 0);
+            trVec = addVec("Highlight " + n.code, _ => map.unhighlight(n.code));
+        };
+        tr.onmouseleave = _ => {
+            map.unhighlight(n.code);
+            trVec.remove();
+        };
+
+        tr.children[3].children[0].onclick = n.has_gps ? _ => {
+            map.showKML(`${server_url}/api/getGeometry/${n.code}`, n.code);
+            addVec("KML " + n.code, _ => map.hideKML(n.code));
+        } : _ => alert("No KML for this NUTS");
+
         tbody.append(tr);
         return total + n.nb_subnut;
     }, 0);
@@ -72,25 +86,28 @@ function backBtn() {
     updateTbody(nutsStack[nutsStack.length - 1]);
 }
 
-function addVec(name, onRemoveCallback) {
+function addVec(name, onRemoveCallback = _ => {}) {
     const tr = document.createElement('tr');
-    const htmlSafeName = name.replace(' ', '-'); // WARN: It's not the best way safety wise
-    tr.id = `layer${htmlSafeName}`;
     tr.innerHTML = `<td>${name}</td><td><button>X</button></td>`;
     tr.children[1].children[0].onclick = _ => {
         onRemoveCallback();
-        $('table#listOverlay tbody tr#layer' + htmlSafeName)[0].remove();
+        tr.remove();
     };
     $('table#listOverlay tbody')[0].append(tr);
+    return tr;
 }
 
-function displayListBrevets(liste) {
-    console.log("liste: " + liste);
+async function displayListBrevets(code) {
     brevetVisibles = true;
     $('table#listNuts')[0].style.visibility = 'hidden';
     $('table#listBrevets')[0].style.visibility = 'visible';
     const tbody = $('table#listBrevets tbody')[0];
+    tbody.innerHTML = "<tr><td>Chargement...</td></tr>";
+
+    const liste = await getBrevets(code);
     tbody.innerHTML = "";
+    //console.log("liste: ");
+    //console.table(liste);
     liste.forEach(n => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${n.appln_id}</td>

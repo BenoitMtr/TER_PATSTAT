@@ -13,90 +13,46 @@ class CustomMap extends ol.Map {
             })
         });
 
-        this.vecCache = {};
-        this.kmlCache = {};
+        this.vecCache = new Map();
+        this.kmlCache = new Map();
 
         this.formatCode = {
             highlight: name => "Highlight " + name,
             KML: name => "KML " + name
         };
-    }
 
-    removeVec(name) {
-        this.removeLayer(this.vecCache[name]);
-    }
-
-    addVec(name) {
-        if (!this.vecCache[name]) {
-            console.warn('No vector saved named', name);
-            return;
-        }
-        this.addLayer(this.vecCache[name]);
-    }
-
-    highlight(name, nb_bevret) {
-        const vecName = this.formatCode.highlight(name);
-        if (!this.vecCache[vecName + "LB"]) {
-            const feat_high = feature_cache.LB.getFeatureById(name).getGeometry().getCoordinates();
-
-            const geom_arr = new MultiLineString(feature_cache.LB.getFeatures().reduce((arr, feat, i) => {
-                if (feat.name === name)
-                    return arr;
-                arr.push(new LineString([feat_high, feat.getGeometry().getCoordinates()]));
-                return arr;
-            }, []));
-
-            const styles = geom_arr.getLineStrings().map((ls) => {
-                return new Style({
-                    stroke: new Stroke({
-                        color: 'rgba(0, 0, 0, 0.8)',
-                        width: 1 // TODO Independant width for each linestring
-                    })
-                });
-            });
-
-            this.vecCache[vecName + "LB"] = new VectorLayer({
-                source: new VectorSource({
-                    features: [new Feature({
-                        'geometry': geom_arr
-                    })]
+        this.style = {
+            kml: feature => new Style({
+                fill: new Stroke({
+                    color: [255, 0, 0, 0.8]
                 }),
-                style: styles
-            });
-        }
-        this.addVec(vecName + "LB");
-
-        if (!this.vecCache[vecName + "RG"]) {
-            this.vecCache[vecName + "RG"] = new VectorLayer({
-                source: new VectorSource({
-                    features: [new Feature({
-                        'geometry': feature_cache.RG.getFeatureById(name).getGeometry()
-                    })]
-                }),
-                style: new Style({
-                    fill: new Fill({
-                        color: 'rgba(255, 0, 0, 0.2)'
-                    })
+                geometry: feature.get('geometry')
+            }),
+            // Connection between NUTS
+            highlightLB: width => new Style({
+                stroke: new Stroke({
+                    color: 'rgba(0, 0, 0, 0.8)',
+                    width: width // TODO Independant width for each linestring
                 })
-            });
-        }
-        this.addVec(vecName + "RG");
-
-        if (!this.vecCache[vecName + "CO"]) {
-            this.vecCache[vecName + "CO"] = new VectorLayer({
-                source: new VectorSource({
-                    features: [feature_cache.LB.getFeatureById(name)]
-                }),
-                style: new Style({
+            }),
+            // NUTS surface
+            highlightRG: new Style({
+                fill: new Fill({
+                    color: 'rgba(255, 0, 0, 0.2)'
+                })
+            }),
+            // Centroid
+            highlightCO: nb_brevet => {
+                return new Style({
                     image: new CircleStyle({
-                        radius: 10,
+                        radius: 20,
                         fill: new Fill({
                             color: 'rgba(0, 0, 255, 1)'
                         })
                     }),
                     text: new Text({
-                        font: '12px Calibri,sans-serif',
-                        text: nb_bevret.toString(),
+                        font: '22px Calibri,sans-serif',
+                        text: nb_brevet.toString(),
                         fill: new Fill({
                             color: 'rgba(255, 255, 255, 1)'
                         }),
@@ -104,38 +60,80 @@ class CustomMap extends ol.Map {
                             color: 'rgba(255, 255, 255, 1)'
                         })
                     })
-                })
-            });
+                });
+            }
+        };
+
+        this.displayedLayers = new Set();
+    }
+
+    removeVec(name) {
+        if (this.displayedLayers.has(name)) {
+            this.removeLayer(this.vecCache.get(name));
+            this.displayedLayers.delete(name);
+        } else
+            console.warn("No layer added named", name);
+    }
+
+    addVec(name) {
+        if (!this.vecCache.has(name))
+            console.warn('No vector saved named', name);
+        else if (this.displayedLayers.has(name))
+            console.warn("layer already added");
+        else {
+            this.addLayer(this.vecCache.get(name));
+            this.displayedLayers.add(name);
         }
-        this.addVec(vecName + "CO");
+    }
+
+    highlight(name, level, nb_brevet) {
+        const vecName = this.formatCode.highlight(name);
+        let vecHash = vecName + " LB";
+        if (!this.vecCache.has(vecHash)) {
+            const featureLB = feature_cache.get("LB:" + level);
+            if (!featureLB)
+                return false;
+            const feat_high = featureLB.getFeatureById(name).getGeometry().getCoordinates();
+
+            const geom_arr = new MultiLineString(featureLB.getFeatures().reduce((arr, feat) => {
+                if (feat.name !== name)
+                    arr.push(new LineString([feat_high, feat.getGeometry().getCoordinates()]));
+                return arr;
+            }, []));
+
+            this.vecCache.set(vecHash, createVector(new Feature({ 'geometry': geom_arr }), this.style.highlightLB(1)));
+        }
+        this.addVec(vecHash);
+
+        if (!this.vecCache.has(vecHash = vecName + " RG"))
+            this.vecCache.set(vecHash, createVector(feature_cache.get("RG:" + level).getFeatureById(name), this.style.highlightRG));
+        this.addVec(vecHash);
+
+        if (!this.vecCache.has(vecHash = vecName + " CO"))
+            this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightCO(formatNumber(nb_brevet))));
+        this.addVec(vecHash);
 
         return vecName;
     }
 
     unhighlight(name) {
-        this.removeVec(this.formatCode.highlight(name) + "LB");
-        this.removeVec(this.formatCode.highlight(name) + "RG");
-        this.removeVec(this.formatCode.highlight(name) + "CO");
+        const vecName = this.formatCode.highlight(name);
+        ["LB", "RG", "CO"].forEach(hash => this.removeVec(vecName + " " + hash));
     }
 
     showKML(url, name) {
         const vecName = this.formatCode.KML(name);
         // If VectorLayer not in cache create new
-        if (!this.vecCache[vecName]) {
-            this.vecCache[vecName] = new VectorLayer({
+        if (!this.vecCache.has(vecName)) {
+            this.vecCache.set(vecName, new VectorLayer({
                 source: new VectorSource({
                     url: url,
                     format: new KML({
                         extractStyles: false
                     })
                 }),
-                style: feature => new Style({
-                    fill: new Stroke({
-                        color: [255, 0, 0, 0.8]
-                    }),
-                    geometry: feature.get('geometry')
-                })
-            });
+                style: this.style.kml
+            }));
         }
         this.addVec(vecName);
         return vecName;
@@ -144,4 +142,26 @@ class CustomMap extends ol.Map {
     hideKML(name) {
         this.removeVec(this.formatCode.KML(name));
     }
+}
+
+function createVector(features, style) {
+    return new VectorLayer({
+        source: new VectorSource({
+            features: [features]
+        }),
+        style: style
+    });
+}
+
+const number_subfix = [
+    "", "k", "m", "B", "Bm"
+];
+
+function formatNumber(value) {
+    let idx = 0;
+    while (value >= 1e3) {
+        value /= 1e3;
+        idx++;
+    }
+    return value.toFixed(0) + number_subfix[idx];
 }
