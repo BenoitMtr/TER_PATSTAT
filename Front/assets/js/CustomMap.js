@@ -111,7 +111,14 @@ class CustomMap extends ol.Map {
 
         if (!this.vecCache.has(vecHash = vecName + " CO"))
             this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightCO(formatNumber(nb_brevet))));
-        this.addVec(vecHash);
+		if (this.vecCache.has(vecHash = vecName + " CO"))
+		{
+			this.vecCache.set(vecHash, null, null);
+			this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightCO(formatNumber(nb_brevet))));
+
+		}
+		    
+	   this.addVec(vecHash);
 
         return vecName;
     }

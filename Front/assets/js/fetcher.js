@@ -1,5 +1,5 @@
-//const server_url = "http://localhost:8080";
-const server_url = "http://192.168.137.1:8080";
+const server_url = "http://localhost:8080";
+//const server_url = "http://192.168.137.1:8080";
 
 const feature_cache = new Map();
 //peut être utile par la suite, pour le moment on le remplit juste de tous les brevets de tous les nuts
@@ -39,19 +39,18 @@ function fetchGeoJSON(level) {
     ));
 }
 
-async function getBrevets(code) {
-    if (!brevetsCache.has(code)) {
-        const buf = await fetch(`${server_url}/api/getBrevets/${code}`);
+async function getBrevets(code, domaine) {
+		const buf = await fetch(`${server_url}/api/getBrevets/${code}/${domaine}`);
+
         const bvt = await buf.json();
         brevetsCache.set(code, bvt);
-    }
     return brevetsCache.get(code);
 }
 
-function getNbBrevets(idx) {
+function getNbBrevets(idx, domaine) {
     Promise.all(nutsCache.get(idx).map(nuts =>
         new Promise(async (resolve, _) => {
-            const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}`);
+            const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}/${domaine}`);
             const nb_brevet = (await buf.json())[0].nb_brevet;
             nuts.nb_brevet = nb_brevet;
             $('table#listNuts tbody tr td label#nbBrevet' + nuts.code)[0].innerHTML = nb_brevet;

@@ -8,11 +8,15 @@
 
 ## Lancer le serveur backend
 
-`npm start`
+`node server.js`
 
 ## Ouvrir Front/index.html dans le navigateur
 
 ---
+
+### Liste des IPC: [lien] https://www.epo.org/searching-for-patents/helpful-resources/first-time-here/classification/cpc_fr.html
+
+### Outil de recherche d'IPC et CPC: [lien] https://www.jpo.go.jp/cgi/cgi-bin/search-portal/narabe_tool_e/narabe_e.cgi
 
 ### Librairie OpenLayer : [lien](https://openlayers.org/)
 

@@ -2,19 +2,19 @@
 
 <head>
     <title>PatStat</title>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/build/ol.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/css/ol.css" type="text/css" />
-    <link rel="stylesheet" href="assets/css/style.css" type="text/css" />
-    <script src="assets/js/CustomMap.js"></script>
-    <script src="assets/js/fetcher.js"></script>
-    <script src="assets/js/index.js"></script>
-</head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/css/ol.css" type="text/css">
+    <link rel="stylesheet" href="/style.a11e3109.css" type="text/css">
+    <script src="/CustomMap.8a0d4e6d.js"></script>
+    <script src="/fetcher.2670ef52.js"></script>
+    <script src="/js.5c615dc2.js"></script>
+<script src="/style.a11e3109.js"></script></head>
 
 <body>
     <div id="map"></div>
     <div id="interface">
-        <table id="listNuts" border=1>
+        <table id="listNuts" border="1">
             <thead>
                 <tr>
                     <td width="10%">Code</td>
@@ -37,7 +37,7 @@
                 </tr>
             </tfoot>
         </table>
-        <table id="listBrevets" border=1>
+        <table id="listBrevets" border="1">
             <thead>
                 <tr>
                     <td width="10%">ID</td>
@@ -54,7 +54,7 @@
             </tfoot>
         </table>
     </div>
-    <table id="listOverlay" border=1>
+    <table id="listOverlay" border="1">
         <thead>
             <tr>
                 <td>Code</td>
@@ -65,19 +65,10 @@
 
         </tbody>
     </table>
-
-	<select name="domaines_brevets" id="domaines_brevets" onchange="setDomaineCode()">
-    <option value="na"></option>
-    <option value="A">Nécessités courantes de la vie</option>
-    <option value="B">Techniques industrielles diverses; transports</option>
-    <option value="C">Chimie; métallurgie</option>
-    <option value="D">Textiles; papier</option>
-    <option value="E">Constructions fixes</option>
-    <option value="F">Mécaniques; éclairage; chauffage; armement; sautage</option>
-	<option value="G">Physique</option>
-	<option value="H">Electricité</option>
-	<option value="Y">Nouveaux développements technologiques</option>
-</select>
+    <div style="display: none;">
+        <a class="overlay" id="brevetX" href="/brevet.html">brevetX</a>
+        <div id="marker" title="Marker"></div>
+    </div>
 </body>
 
 </html>

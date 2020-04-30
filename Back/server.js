@@ -78,26 +78,34 @@ app.get('/api/getGeometry/:code', async (req, res) => {
     }
 });
 
-app.get('/api/getNbBrevets/:code', async (req, res) => {
+app.get('/api/getNbBrevets/:code/:domaine', async (req, res) => {
+	let codeDom=req.params.domaine;
+	if(codeDom=='na') codeDom='';
+	
     querySendSQL(res, `
         SELECT COUNT(*) as nb_brevet
         FROM tls201_appln a
         INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id
         INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
-        INNER JOIN tls906_person c ON b.person_id=c.person_id
-        WHERE c.nuts like '${req.params.code}%'`);
+		INNER JOIN tls906_person c ON b.person_id=c.person_id
+        INNER JOIN tls209_appln_ipc d ON a.appln_id=d.appln_id
+        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%'`);
 });
 
-app.get('/api/getBrevets/:code', async (req, res) => {
+app.get('/api/getBrevets/:code/:domaine', async (req, res) => {
+	
+	let codeDom=req.params.domaine;
+	if(codeDom=='na') codeDom='';
     const pagesize = Number(req.query.pagesize) || 30;
     const page = Number(req.query.page) || 0;
     querySendSQL(res,
-        `SELECT c.person_name, c.nuts, c.nuts_level, t.appln_title, a.* 
+        `SELECT c.person_name, c.nuts, c.nuts_level, t.appln_title, a.*, d.ipc_class_symbol
         FROM tls201_appln a
         INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id
         INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
         INNER JOIN tls906_person c ON b.person_id=c.person_id
-        WHERE c.nuts like '${req.params.code}%'
+		INNER JOIN tls209_appln_ipc d ON a.appln_id=d.appln_id
+        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%'
         LIMIT ${pagesize} OFFSET ${page*pagesize}`
     );
 });

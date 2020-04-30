@@ -20,82 +20,21 @@
   d'autres ?
 
 
-* Preambule 
-
-Vous êtes donc 5 sur cette thématique : 3 M1 Miage + 2 M1 Info.
-Si ce n'est pas le cas pour les Miages, manifestez vous ultra rapidos
-
-J'ai vu Mr Malapert hier .. et j'ai appris avec surprise que le TER
-avait déjà commencé et que vous devriez déjà y avoir consacré du
-temps .. ?
-
-Je pense que le sujet est assez large pour que tout le monde montre 
-sa valeur ! Néanmoins n'oublions que Mr Malapert commencera par
-identifier qui fait (ou a fait) quoi   ?
-
-Avant de discuter de cela voyons un peu ce qu'il va falloir
-apprendre/faire/résoudre ... on découpera ensuite.
-
-* Monté en compétences
-
-** Propriété industrielle
-
-*** Notion de brevet ?
-
-+ Qu'est ce qu'un brevet ?
-+ Institutions qui gèrent les brevets (en europe, Japon, Usa, )
-
-  Conséquences sur l'analyse  (je résume que ce que j'en ai déduit =>
-  pas simple et assez divers .. donc plutot utiliser l'europe pour
-  commencer)
-
-+ Qu'est ce que c'est qu'une "application" (=> dépot de brevet) ?
- 
-  - Notion d'"applicants"
-  - Notion d'"inventors"
-  - Notion de références (backward/forward)
-  - Les dates ...
-  - Les Nuts
-  - Les domaines sectoriels des brevets : https://www.wipo.int/edocs/pubdocs/fr/wipo_guide_ipc_2019.pdf
-
 *** PATSTAT
 + Qu'est ce que c'est  ?
 
   https://arxiv.org/pdf/1404.7447.pdf
   https://www.researchgate.net/publication/275348919_PATSTAT_revisited
 
-* Environnement/management du projet
-
-Comment on fait pour travailler ensemble ? et rendre compte du travail 
-et des apprentissages/résultats/codes/ ...
-
-Je n'impose pas que M1 info et M1 Miage utilisent les mêmes outils 
-
-+ Planning
-+ Outils github ? Slack ?
-
-* SQL
-
-Il va falloir faire parler la base ... pour sortir les tables qui
-vont bien ?
-
-
-* UI   
+* Notre travail
 
 Représentations graphiques 
-+ des territoires 
-+ des données sur les territoires
-+ des relations entres ces territoires...
++ des territoires (régions NUTS)
++ des données sur les territoires (nombre et liste de brevets)
++ des relations entres ces territoires... (collaborations entre territoires pour la création de brevets)
 
+* Choix techniques
 
-Lien entre tables et UI .. je ne pense pas qu'on puisse faire de
-l'interactif entre l'UI et la database => les requetes SQL prennent du
-temps .. à moins réduire les tables !?
-
-
-* Analyse des données
-
-Comment on montre que les "centres de connaissances" bougent ?
-
-J'ai trouvé ca ? 
-https://www.leydesdorff.net/th8/TRIPLE%20HELIX%20-%20VIII%20CONFERENCE/PROCEEDINGS/0061_Landoni_Paolo_O-007/Technological%20collaboration%20and%20R&D%20alliances_Paper_draft5BVL.pdf
++ Langages: Node JS
++ Architecture: Structure Back (serveur Node) et Front (Graphique des territoires)
++ Gestion de projet: Github

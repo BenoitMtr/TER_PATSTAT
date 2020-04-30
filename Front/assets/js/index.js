@@ -10,16 +10,20 @@ const { Feature } = ol;
 
 const nutsStack = [];
 
+let domaineCode='na';
 let brevetVisibles = false;
 
 let map;
 
 const $ = e => document.querySelectorAll(e);
 
-window.onload = _ => {
-    listNuts().then(idx => {
+window.onload = _ => initMap();
+
+function initMap()
+{
+	listNuts().then(idx => {
         updateTbody(nutsCache.get(idx));
-        getNbBrevets(idx);
+        getNbBrevets(idx, domaineCode);
         for (let i = 0; i < 4; i++)
             fetchGeoJSON(i);
     });
@@ -31,8 +35,21 @@ window.onload = _ => {
             backBtn();
         }
     };
-};
+}
 
+function setDomaineCode()
+{
+	var l=document.getElementById("domaines_brevets");
+	domaineCode=l.options[l.selectedIndex].value;
+	console.log(domaineCode);
+	
+	listNuts().then(idx => {
+        updateTbody(nutsCache.get(idx));
+        getNbBrevets(idx, domaineCode);
+        for (let i = 0; i < 4; i++)
+            fetchGeoJSON(i);
+    });
+}
 
 function updateTbody(nuts) {
     const tbody = $('table#listNuts tbody')[0];
@@ -47,7 +64,7 @@ function updateTbody(nuts) {
 						<td><label id='nbBrevet${n.code}'>${n.nb_brevet||0}</label></td>
 				        <td><button>Liste de brevets</button></td>`;
         tr.children[4].children[0].onclick = async _ => updateTbody(nutsCache.get(await listNuts(n.code, n.level + 1)));
-        tr.children[6].children[0].onclick = _ => displayListBrevets(n.code);
+        tr.children[6].children[0].onclick = _ => displayListBrevets(n.code, domaineCode);
         let trVec;
         tr.onmouseenter = _ => {
             map.highlight(n.code, n.level, n.nb_brevet || 0);
@@ -97,17 +114,17 @@ function addVec(name, onRemoveCallback = _ => {}) {
     return tr;
 }
 
-async function displayListBrevets(code) {
+async function displayListBrevets(code, domaine) {
     brevetVisibles = true;
     $('table#listNuts')[0].style.visibility = 'hidden';
     $('table#listBrevets')[0].style.visibility = 'visible';
     const tbody = $('table#listBrevets tbody')[0];
     tbody.innerHTML = "<tr><td>Chargement...</td></tr>";
 
-    const liste = await getBrevets(code);
+    const liste = await getBrevets(code, domaineCode);
     tbody.innerHTML = "";
-    //console.log("liste: ");
-    //console.table(liste);
+    console.log("liste: ");
+    console.table(liste);
     liste.forEach(n => {
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${n.appln_id}</td>
