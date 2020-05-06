@@ -18,7 +18,9 @@ class CustomMap extends ol.Map {
 
         this.formatCode = {
             highlight: name => "Highlight " + name,
-            KML: name => "KML " + name
+            KML: name => "KML " + name,
+            centroids: level => "Centroids " + level,
+            collab: (nuts_code, domaine) => `Collab ${nuts_code} : ${domaine}`
         };
 
         this.style = {
@@ -31,8 +33,8 @@ class CustomMap extends ol.Map {
             // Connection between NUTS
             highlightLB: width => new Style({
                 stroke: new Stroke({
-                    color: 'rgba(0, 0, 0, 0.8)',
-                    width: width // TODO Independant width for each linestring
+                    color: 'rgba(0, 0, 0, 0.5)',
+                    width: width
                 })
             }),
             // NUTS surface
@@ -42,29 +44,55 @@ class CustomMap extends ol.Map {
                 })
             }),
             // Centroid
-            highlightCO: nb_brevet => {
-                return new Style({
-                    image: new CircleStyle({
-                        radius: 20,
-                        fill: new Fill({
-                            color: 'rgba(0, 0, 255, 1)'
-                        })
-                    }),
-                    text: new Text({
-                        font: '22px Calibri,sans-serif',
-                        text: nb_brevet.toString(),
-                        fill: new Fill({
-                            color: 'rgba(255, 255, 255, 1)'
-                        }),
-                        stroke: new Stroke({
-                            color: 'rgba(255, 255, 255, 1)'
-                        })
+            highlightCO: (min, max) => feat => new Style({
+                image: new CircleStyle({
+                    radius: norm(feat.get("nb_brevet"), min, max, 20, 50),
+                    fill: new Fill({
+                        color: 'rgba(0, 0, 255, 0.4)'
                     })
-                });
-            }
+                }),
+                text: new Text({
+                    font: '22px Calibri,sans-serif',
+                    text: formatNumber(feat.get("nb_brevet")),
+                    fill: new Fill({
+                        color: 'rgba(255, 255, 255, 1)'
+                    }),
+                    stroke: new Stroke({
+                        color: 'rgba(255, 255, 255, 1)'
+                    })
+                })
+            }),
+            highlightName: name => new Style({
+                image: new CircleStyle({
+                    radius: 20,
+                    fill: new Fill({
+                        color: 'rgba(0, 0, 255, 0.4)'
+                    })
+                }),
+                text: new Text({
+                    font: '22px Calibri,sans-serif',
+                    text: name,
+                    fill: new Fill({
+                        color: 'rgba(255, 255, 255, 1)'
+                    }),
+                    stroke: new Stroke({
+                        color: 'rgba(255, 255, 255, 1)'
+                    })
+                })
+            })
         };
 
         this.displayedLayers = new Set();
+    }
+
+    reloadCache() {
+        const centroidsHash = this.formatCode.centroids(0);
+        if (this.displayedLayers.has(centroidsHash)) {
+            this.removeVec(centroidsHash);
+            this.vecCache.delete(centroidsHash);
+            this.showCentroids(0);
+        }
+        // TODO Add all types ...
     }
 
     removeVec(name) {
@@ -86,22 +114,66 @@ class CustomMap extends ol.Map {
         }
     }
 
-    highlight(name, level, nb_brevet) {
+    showCentroids(level = 0) {
+        const vecHash = this.formatCode.centroids(level);
+        if (!this.vecCache.has(vecHash)) {
+            let [min, max] = [Infinity, -Infinity];
+            const points_feat = nutsCache.get(":" + level).map(n => {
+                const nb_brevet = n.nb_brevet.get(domaineCode) || 0;
+                if (nb_brevet < min)
+                    min = nb_brevet;
+                if (nb_brevet > max)
+                    max = nb_brevet;
+                const feat = feature_cache.get("LB:" + n.level).getFeatureById(n.code);
+                feat.set("nb_brevet", nb_brevet);
+                return feat;
+            });
+            console.log("centroids points_feats", points_feat);
+
+            this.vecCache.set(vecHash, new VectorLayer({
+                source: new VectorSource({
+                    features: points_feat
+                }),
+                style: this.style.highlightCO(min, max)
+            }));
+        }
+        this.addVec(vecHash);
+    }
+
+    hideCentroids(level = 0) {
+        this.removeVec(this.formatCode.centroids(level));
+    }
+
+    highlight(name, level = 0, nb_brevet = 0) {
         const vecName = this.formatCode.highlight(name);
         let vecHash = vecName + " LB";
         if (!this.vecCache.has(vecHash)) {
+            const collab = collabCache.get('na');
             const featureLB = feature_cache.get("LB:" + level);
-            if (!featureLB)
-                return false;
+            if (featureLB == null || collab[name] == null)
+                return;
             const feat_high = featureLB.getFeatureById(name).getGeometry().getCoordinates();
 
-            const geom_arr = new MultiLineString(featureLB.getFeatures().reduce((arr, feat) => {
-                if (feat.name !== name)
-                    arr.push(new LineString([feat_high, feat.getGeometry().getCoordinates()]));
+            const geom_arr = collab[name].code.reduce((arr, code, i) => {
+                const feat = featureLB.getFeatureById(code);
+                if (feat == null) {
+                    console.warn("No feature called", code);
+                } else {
+                    const featObj = new Feature({
+                        geometry: new LineString([feat_high, feat.getGeometry().getCoordinates()]),
+                        width: collab[name].nb[i]
+                    });
+                    arr.push(featObj);
+                }
                 return arr;
-            }, []));
+            }, []);
 
-            this.vecCache.set(vecHash, createVector(new Feature({ 'geometry': geom_arr }), this.style.highlightLB(1)));
+            this.vecCache.set(vecHash, new VectorLayer({
+                source: new VectorSource({
+                    features: geom_arr
+                }),
+                style: feat => this.style.highlightLB(feat.get('width'))
+            }));
         }
         this.addVec(vecHash);
 
@@ -110,15 +182,8 @@ class CustomMap extends ol.Map {
         this.addVec(vecHash);
 
         if (!this.vecCache.has(vecHash = vecName + " CO"))
-            this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightCO(formatNumber(nb_brevet))));
-		if (this.vecCache.has(vecHash = vecName + " CO"))
-		{
-			this.vecCache.set(vecHash, null, null);
-			this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightCO(formatNumber(nb_brevet))));
-
-		}
-		    
-	   this.addVec(vecHash);
+            this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightName(name)));
+        this.addVec(vecHash);
 
         return vecName;
     }
@@ -172,3 +237,5 @@ function formatNumber(value) {
     }
     return value.toFixed(0) + number_subfix[idx];
 }
+
+function norm(v, f1, f2, l1, l2) { return l1 + (l2 - l1) * ((v - f1) / (f2 - f1)); }

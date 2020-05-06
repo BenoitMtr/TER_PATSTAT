@@ -6,7 +6,21 @@ const feature_cache = new Map();
 //et on utilise ça pour afficher le nombre de brevets
 const brevetsCache = new Map();
 const nutsCache = new Map();
+const collabCache = new Map();
 
+function fetcher() {
+    return listNuts().then(async idx => {
+        const nuts = nutsCache.get(idx);
+        updateTbody(nuts);
+
+        getCollab(domaineCode).then(collabs => {
+            console.log("collabs", collabs);
+        });
+        for (let i = 1; i < 4; i++)
+            await fetchGeoJSON(i);
+        await fetchGeoJSON(0);
+    });
+}
 
 async function listNuts(code = "", level = 0) {
     const idx = code + ":" + level;
@@ -16,13 +30,14 @@ async function listNuts(code = "", level = 0) {
         nutsCache.set(idx, await buf.json());
     }
 
+    getNbBrevets(idx, domaineCode);
     nutsStack.push(nutsCache.get(idx));
-    console.log(nutsCache.get(idx));
+    console.log("nutsCache", nutsCache.get(idx));
     return idx;
 }
 
 function fetchGeoJSON(level) {
-    Promise.all(["RG", "LB"].map(arg =>
+    return Promise.all(["RG", "LB"].map(arg =>
         new Promise(async (resolve, reject) => {
             try {
                 const buf = await fetch(`${server_url}/api/getGeoJson/${arg}?level=${level}`);
@@ -39,22 +54,68 @@ function fetchGeoJSON(level) {
     ));
 }
 
-async function getBrevets(code, domaine) {
-		const buf = await fetch(`${server_url}/api/getBrevets/${code}/${domaine}`);
-
+async function getBrevets(code, domaine, pageSize = 20, page = 0) {
+    const hash = `${code}:${domaine}:${page}`;
+    if (!brevetsCache.has(hash)) {
+        const buf = await fetch(`${server_url}/api/getBrevets/${code}/${domaine}?pagesize=${pageSize}&page=${page}`);
         const bvt = await buf.json();
-        brevetsCache.set(code, bvt);
-    return brevetsCache.get(code);
+        brevetsCache.set(hash, bvt);
+    }
+    return brevetsCache.get(hash);
 }
 
 function getNbBrevets(idx, domaine) {
-    Promise.all(nutsCache.get(idx).map(nuts =>
-        new Promise(async (resolve, _) => {
-            const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}/${domaine}`);
-            const nb_brevet = (await buf.json())[0].nb_brevet;
-            nuts.nb_brevet = nb_brevet;
-            $('table#listNuts tbody tr td label#nbBrevet' + nuts.code)[0].innerHTML = nb_brevet;
-            resolve();
-        })
-    ));
+    return new Promise((resolve, _) => {
+        const nuts = nutsCache.get(idx);
+        if (!nuts.done)
+            resolve(Promise.all(nutsCache.get(idx).map(nuts =>
+                new Promise(async (resolve, _) => {
+                    if (!nuts.nb_brevet)
+                        nuts.nb_brevet = new Map();
+                    if (!nuts.nb_brevet.has(domaine)) {
+                        const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}/${domaine}`);
+                        const nb_brevet = (await buf.json())[0].nb_brevet;
+                        nuts.nb_brevet.set(domaine, nb_brevet);
+                    }
+                    $('table#listNuts tbody tr td label#nbBrevet' + nuts.code)[0].innerHTML = nuts.nb_brevet.get(domaine);
+                    resolve();
+                })
+            )));
+        else resolve();
+    });
+}
+
+function getCollab(domaine) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!collabCache.has(domaine)) {
+                const obj = {};
+                for (let code of nutsCache.get(":0")) {
+                    obj[code.code] = { code: [], nb: [] };
+                }
+                const buf = await fetch(`${server_url}/api/getCollab/${domaine}`);
+                const jsn = await buf.json();
+                jsn.forEach(app => {
+                    const collab = app.collab.split(':');
+                    const nb = app.nb_person_collab.split(':').map(Number.parseInt);
+                    collab.forEach(code => {
+                        collab.forEach((colla, j) => {
+                            if (code == colla)
+                                return;
+                            const v = obj[code];
+                            if (v.code.indexOf(colla) == -1) {
+                                v.code.push(colla);
+                                v.nb.push(nb[j]);
+                            }
+                        });
+                    });
+                });
+                collabCache.set(domaine, obj);
+            }
+            resolve(collabCache.get(domaine));
+        } catch (err) {
+            console.error("Can't fetch collab", domaine);
+            reject(err);
+        }
+    });
 }

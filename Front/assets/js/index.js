@@ -10,24 +10,22 @@ const { Feature } = ol;
 
 const nutsStack = [];
 
-let domaineCode='na';
+let domaineCode = 'na';
 let brevetVisibles = false;
+
+let pagesize = 30;
+let page = 0;
 
 let map;
 
 const $ = e => document.querySelectorAll(e);
 
-window.onload = _ => initMap();
-
-function initMap()
-{
-	listNuts().then(idx => {
-        updateTbody(nutsCache.get(idx));
-        getNbBrevets(idx, domaineCode);
-        for (let i = 0; i < 4; i++)
-            fetchGeoJSON(i);
+window.onload = _ => {
+    fetcher().then(_ => {
+        map.showCentroids(0);
     });
-    $('table#listNuts tfoot tr td button, table#listBrevets tfoot tr td button').forEach(elt => elt.onclick = _ => backBtn());
+    $('table#listNuts tfoot tr td button, table#listBrevets tfoot tr td button:first-child').forEach(elt => elt.onclick = _ => backBtn());
+    $('select#domaines_brevets')[0].onchange = evt => setDomaineCode(evt.target.value);
     map = new CustomMap($('div#map')[0]);
 
     document.body.onkeydown = evt => {
@@ -35,19 +33,13 @@ function initMap()
             backBtn();
         }
     };
-}
+};
 
-function setDomaineCode()
-{
-	var l=document.getElementById("domaines_brevets");
-	domaineCode=l.options[l.selectedIndex].value;
-	console.log(domaineCode);
-	
-	listNuts().then(idx => {
-        updateTbody(nutsCache.get(idx));
-        getNbBrevets(idx, domaineCode);
-        for (let i = 0; i < 4; i++)
-            fetchGeoJSON(i);
+function setDomaineCode(domaine) {
+    domaineCode = domaine;
+    console.log("domaine", domaine);
+    fetcher().then(_ => {
+        map.reloadCache();
     });
 }
 
@@ -61,13 +53,13 @@ function updateTbody(nuts) {
                         <td><label>${n.nb_subnut}</label></td>
                         <td><button>Add</button></td>
                         <td><button>F</button></td>
-						<td><label id='nbBrevet${n.code}'>${n.nb_brevet||0}</label></td>
+						<td><label id='nbBrevet${n.code}'>${n.nb_brevet.get(domaineCode)||0}</label></td>
 				        <td><button>Liste de brevets</button></td>`;
         tr.children[4].children[0].onclick = async _ => updateTbody(nutsCache.get(await listNuts(n.code, n.level + 1)));
-        tr.children[6].children[0].onclick = _ => displayListBrevets(n.code, domaineCode);
+        tr.children[6].children[0].onclick = _ => displayListBrevets(n, domaineCode);
         let trVec;
         tr.onmouseenter = _ => {
-            map.highlight(n.code, n.level, n.nb_brevet || 0);
+            map.highlight(n.code, n.level, n.nb_brevet.get(domaineCode) || 0);
             trVec = addVec("Highlight " + n.code, _ => map.unhighlight(n.code));
         };
         tr.onmouseleave = _ => {
@@ -114,14 +106,28 @@ function addVec(name, onRemoveCallback = _ => {}) {
     return tr;
 }
 
-async function displayListBrevets(code, domaine) {
+function displayListBrevets(nuts, domaine) {
     brevetVisibles = true;
+    page = 0;
     $('table#listNuts')[0].style.visibility = 'hidden';
     $('table#listBrevets')[0].style.visibility = 'visible';
+    $('table#listBrevets tfoot tr td button')[1].onclick = _ => {
+        page--;
+        showBrevets(nuts, domaine);
+    };
+    $('table#listBrevets tfoot tr td button')[2].onclick = _ => {
+        page++;
+        showBrevets(nuts, domaine);
+    };
+
+    showBrevets(nuts, domaine);
+}
+
+async function showBrevets(nuts, domaine) {
+    $('table#listBrevets tfoot tr td')[2].innerHTML = `${page + 1}/${Math.ceil(nuts.nb_brevet.get(domaineCode) / pagesize)}`;
     const tbody = $('table#listBrevets tbody')[0];
     tbody.innerHTML = "<tr><td>Chargement...</td></tr>";
-
-    const liste = await getBrevets(code, domaineCode);
+    const liste = await getBrevets(nuts.code, domaine, pagesize, page);
     tbody.innerHTML = "";
     console.log("liste: ");
     console.table(liste);
