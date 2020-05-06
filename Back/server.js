@@ -79,11 +79,11 @@ app.get('/api/getGeometry/:code', async (req, res) => {
 });
 
 app.get('/api/getNbBrevets/:code/:domaine', async (req, res) => {
-	let codeDom=req.params.domaine;
-	if(codeDom=='na') codeDom='';
-	
+    let codeDom = req.params.domaine;
+    if (codeDom == 'na') codeDom = '';
+
     querySendSQL(res, `
-        SELECT COUNT(*) as nb_brevet
+        SELECT COUNT(DISTINCT a.appln_id) as nb_brevet
         FROM tls201_appln a
         INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id
         INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
@@ -93,9 +93,8 @@ app.get('/api/getNbBrevets/:code/:domaine', async (req, res) => {
 });
 
 app.get('/api/getBrevets/:code/:domaine', async (req, res) => {
-	
-	let codeDom=req.params.domaine;
-	if(codeDom=='na') codeDom='';
+    let codeDom = req.params.domaine;
+    if (codeDom == 'na') codeDom = '';
     const pagesize = Number(req.query.pagesize) || 30;
     const page = Number(req.query.page) || 0;
     querySendSQL(res,
@@ -108,6 +107,37 @@ app.get('/api/getBrevets/:code/:domaine', async (req, res) => {
         WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%'
         LIMIT ${pagesize} OFFSET ${page*pagesize}`
     );
+});
+
+app.get('/api/getCollab/:domaine', async (req, res) => {
+
+    let codeDom = req.params.domaine;
+    if (codeDom == 'na') codeDom = '';
+    querySendSQL(res,
+        `SELECT
+            t.appln_id,
+            COUNT(nuts_corr) AS nb_nuts,
+            GROUP_CONCAT(nuts_corr SEPARATOR  ":") AS collab,
+            GROUP_CONCAT(nb_person SEPARATOR  ":") AS nb_person_collab
+        FROM (
+            SELECT
+                a.appln_id,
+                substring(p.nuts,1,2) AS nuts_corr,
+                COUNT(p.person_id) AS nb_person
+            FROM tls201_appln a
+                INNER JOIN tls207_pers_appln pa
+                    ON a.appln_id = pa.appln_id
+                INNER JOIN tls202_appln_title t
+                    ON a.appln_id = t.appln_id
+                INNER JOIN tls906_person p
+                    ON pa.person_id = p.person_id
+                INNER JOIN tls209_appln_ipc d
+                ON a.appln_id = d.appln_id
+            WHERE p.nuts != '' AND d.ipc_class_symbol LIKE '${codeDom}%'
+            GROUP BY a.appln_id, nuts_corr
+        ) AS t
+        GROUP BY t.appln_id
+        HAVING nb_nuts > 1`);
 });
 
 function readSendJSON(res, fileName) {
