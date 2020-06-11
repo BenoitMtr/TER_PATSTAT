@@ -78,23 +78,31 @@ app.get('/api/getGeometry/:code', async (req, res) => {
     }
 });
 
-app.get('/api/getNbBrevets/:code/:domaine', async (req, res) => {
+app.get('/api/getNbBrevets/:code/:domaine/:annee', async (req, res) => {
     let codeDom = req.params.domaine;
+	let annee=req.params.annee;
     if (codeDom == 'na') codeDom = '';
+	if(annee==0) annee='';
 
-    querySendSQL(res, `
+	console.log("WHERE c.nuts like "+req.params.code+ "AND d.ipc_class_symbol LIKE"+ codeDom +"AND a.appln_filing_year LIKE"+annee);
+    
+	querySendSQL(res, `
         SELECT COUNT(DISTINCT a.appln_id) as nb_brevet
         FROM tls201_appln a
         INNER JOIN tls207_pers_appln b ON a.appln_id=b.appln_id
         INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
 		INNER JOIN tls906_person c ON b.person_id=c.person_id
         INNER JOIN tls209_appln_ipc d ON a.appln_id=d.appln_id
-        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%'`);
+        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%' AND a.appln_filing_year LIKE '${annee}%'`);
 });
 
-app.get('/api/getBrevets/:code/:domaine', async (req, res) => {
+app.get('/api/getBrevets/:code/:domaine/:annee', async (req, res) => {
     let codeDom = req.params.domaine;
+	let annee=req.params.annee;
     if (codeDom == 'na') codeDom = '';
+	if(annee==0) annee='';
+	
+	
     const pagesize = Number(req.query.pagesize) || 30;
     const page = Number(req.query.page) || 0;
     querySendSQL(res,
@@ -104,15 +112,17 @@ app.get('/api/getBrevets/:code/:domaine', async (req, res) => {
         INNER JOIN tls202_appln_title t ON a.appln_id=t.appln_id
         INNER JOIN tls906_person c ON b.person_id=c.person_id
 		INNER JOIN tls209_appln_ipc d ON a.appln_id=d.appln_id
-        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%'
+        WHERE c.nuts like '${req.params.code}%' AND d.ipc_class_symbol LIKE '${codeDom}%' AND a.appln_filing_year LIKE '${annee}%'
         LIMIT ${pagesize} OFFSET ${page*pagesize}`
     );
 });
 
-app.get('/api/getCollab/:domaine', async (req, res) => {
+app.get('/api/getCollab/:domaine/:annee', async (req, res) => {
 
     let codeDom = req.params.domaine;
+	let annee=req.params.annee;
     if (codeDom == 'na') codeDom = '';
+	if(annee==0) annee='';
     querySendSQL(res,
         `SELECT
             t.appln_id,
@@ -133,7 +143,7 @@ app.get('/api/getCollab/:domaine', async (req, res) => {
                     ON pa.person_id = p.person_id
                 INNER JOIN tls209_appln_ipc d
                 ON a.appln_id = d.appln_id
-            WHERE p.nuts != '' AND d.ipc_class_symbol LIKE '${codeDom}%'
+            WHERE p.nuts != '' AND d.ipc_class_symbol LIKE '${codeDom}%' AND a.appln_filing_year LIKE '${annee}%'
             GROUP BY a.appln_id, nuts_corr
         ) AS t
         GROUP BY t.appln_id

@@ -9,11 +9,11 @@ const nutsCache = new Map();
 const collabCache = new Map();
 
 function fetcher() {
-    return listNuts().then(async idx => {
+    return listNuts("",0,annee).then(async idx => {
         const nuts = nutsCache.get(idx);
         updateTbody(nuts);
 
-        getCollab(domaineCode).then(collabs => {
+        getCollab(domaineCode, annee).then(collabs => {
             console.log("collabs", collabs);
         });
         for (let i = 1; i < 4; i++)
@@ -22,15 +22,15 @@ function fetcher() {
     });
 }
 
-async function listNuts(code = "", level = 0) {
+async function listNuts(code = "", level = 0, annee) {
     const idx = code + ":" + level;
     // If NUTS not in cache create new
-    if (!nutsCache.has(idx)) {
+    if (!nutsCache.has(idx) || annee!=0) {
         const buf = await fetch(`${server_url}/api/getNuts?level=${level}&code=${code}`);
         nutsCache.set(idx, await buf.json());
     }
 
-    getNbBrevets(idx, domaineCode);
+    getNbBrevets(idx, domaineCode, annee);
     nutsStack.push(nutsCache.get(idx));
     console.log("nutsCache", nutsCache.get(idx));
     return idx;
@@ -54,17 +54,17 @@ function fetchGeoJSON(level) {
     ));
 }
 
-async function getBrevets(code, domaine, pageSize = 20, page = 0) {
-    const hash = `${code}:${domaine}:${page}`;
+async function getBrevets(code, domaine, annee, pageSize = 20, page = 0) {
+    const hash = `${code}:${domaine}:${annee}:${page}`;
     if (!brevetsCache.has(hash)) {
-        const buf = await fetch(`${server_url}/api/getBrevets/${code}/${domaine}?pagesize=${pageSize}&page=${page}`);
+        const buf = await fetch(`${server_url}/api/getBrevets/${code}/${domaine}/${annee}?pagesize=${pageSize}&page=${page}`);
         const bvt = await buf.json();
         brevetsCache.set(hash, bvt);
     }
     return brevetsCache.get(hash);
 }
 
-function getNbBrevets(idx, domaine) {
+function getNbBrevets(idx, domaine, annee) {
     return new Promise((resolve, _) => {
         const nuts = nutsCache.get(idx);
         if (!nuts.done)
@@ -73,7 +73,9 @@ function getNbBrevets(idx, domaine) {
                     if (!nuts.nb_brevet)
                         nuts.nb_brevet = new Map();
                     if (!nuts.nb_brevet.has(domaine)) {
-                        const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}/${domaine}`);
+							console.log("entré dans getnbbrevets");
+
+                        const buf = await fetch(`${server_url}/api/getNbBrevets/${nuts.code}/${domaine}/${annee}`);
                         const nb_brevet = (await buf.json())[0].nb_brevet;
                         nuts.nb_brevet.set(domaine, nb_brevet);
                     }
@@ -85,7 +87,7 @@ function getNbBrevets(idx, domaine) {
     });
 }
 
-function getCollab(domaine) {
+function getCollab(domaine, annee) {
     return new Promise(async (resolve, reject) => {
         try {
             if (!collabCache.has(domaine)) {
@@ -93,7 +95,7 @@ function getCollab(domaine) {
                 for (let code of nutsCache.get(":0")) {
                     obj[code.code] = { code: [], nb: [] };
                 }
-                const buf = await fetch(`${server_url}/api/getCollab/${domaine}`);
+                const buf = await fetch(`${server_url}/api/getCollab/${domaine}/${annee}`);
                 const jsn = await buf.json();
                 jsn.forEach(app => {
                     const collab = app.collab.split(':');

@@ -21,6 +21,13 @@ select#domaines_brevets
     background-color: #2200FF22;
     width: 200px;
 }
+
+input#annees_brevets
+{
+	position:absolute;
+	bottom:900px;
+}
+
 table#listOverlay {
     position: fixed;
     opacity: 1;
