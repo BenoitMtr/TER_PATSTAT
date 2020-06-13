@@ -12,20 +12,20 @@ div#map {
     height: 100%;
 }
 
-select#domaines_brevets
-{
-	position: fixed;
-    opacity: 1;
-    right: 150px;
-    top: 80px;
+select#domaines_brevets {
+    position: fixed;
+    left: 50px;
+    top: 50px;
     background-color: #2200FF22;
     width: 200px;
 }
 
-input#annees_brevets
-{
-	position:absolute;
-	bottom:900px;
+input#annees_brevets {
+    position: fixed;
+    left: 50px;
+    top: 980px;
+    background-color: #2200FF22;
+    width: 200px;
 }
 
 table#listOverlay {
@@ -50,6 +50,29 @@ table#listNuts {
     width: 300px;
 }
 
+table#listNuts thead tr th:nth-child(1),
+table#listNuts tbody tr td:nth-child(1) {
+    width: 15%;
+}
+
+table#listNuts tfoot tr th:nth-child(1) {
+    width: 35%;
+}
+
+table#listNuts tfoot tr th:nth-child(2) {
+    width: 20%;
+}
+
+table#listNuts thead tr th:nth-child(2),
+table#listNuts tbody tr td:nth-child(2) {
+    width: 45%;
+}
+
+table#listNuts thead tr th:nth-child(3),
+table#listNuts tbody tr td:nth-child(3) {
+    width: 40%;
+}
+
 table#listNuts thead,
 table#listNuts tfoot,
 table#listBrevets thead,
@@ -58,46 +81,23 @@ table#listBrevets tfoot {
     background-color: #2200FF55;
 }
 
-table#listNuts tr td:nth-child(3),
-table#listNuts tr td:nth-child(6),
-table#listNuts tfoot tr td:nth-child(4) {
+table#listNuts thead tr th:nth-child(3),
+table#listNuts tbody tr td:nth-child(3),
+table#listNuts tfoot tr th {
     background-color: white;
     text-align: center;
-}
-
-tfoot tr td button {
-    width: 100%;
 }
 
 table#listNuts tbody tr:nth-child(odd) {
     background-color: #0022FF22;
 }
 
-table#listNuts tbody tr:hover,
-table#listBrevets tbody tr:hover {
+table#listNuts tbody tr:hover {
     background-color: white;
 }
 
-table#listNuts tbody,
-table#listBrevets tbody {
+table#listNuts tbody {
     display: block;
     max-height: 800px;
     overflow-y: scroll;
-}
-
-table#listBrevets {
-    visibility: hidden;
-    position: inherit;
-    top: 80px;
-    background-color: #2200FF22;
-    width: 300px;
-}
-
-div#marker {
-    width: 20px;
-    height: 20px;
-    border: 1px solid #088;
-    border-radius: 10px;
-    background-color: #0FF;
-    opacity: 0.5;
 }

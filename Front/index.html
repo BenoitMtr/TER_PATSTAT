@@ -7,84 +7,50 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.2.1/css/ol.css" type="text/css" />
     <link rel="stylesheet" href="assets/css/style.css" type="text/css" />
     <script src="assets/js/CustomMap.js"></script>
-    <script src="assets/js/fetcher.js"></script>
     <script src="assets/js/index.js"></script>
 </head>
 
 <body>
     <div id="map"></div>
-	<input type="month" id="annees_brevets" name="annees_brevets">
     <div id="interface">
-	
-        <table id="listNuts" border=1>
+        <select name="domaines_brevets" id="domaines_brevets">
+            <option value="A">Nécessités courantes de la vie</option>
+            <option value="B">Techniques industrielles diverses; transports</option>
+            <option value="C">Chimie; métallurgie</option>
+            <option value="D">Textiles; papier</option>
+            <option value="E">Constructions fixes</option>
+            <option value="F">Mécaniques; éclairage; chauffage; armement; sautage</option>
+            <option value="G">Physique</option>
+            <option value="H">Electricité</option>
+            <option value="Y">Nouveaux développements technologiques</option>
+        </select>
+        <table id="listNuts">
             <thead>
                 <tr>
-                    <td width="10%">Code</td>
-                    <td width="50%">Nom</td>
-                    <td width="10%">SB</td>
-                    <td width="10%">HL</td>
-                    <td width="5%">Focus</td>
-                    <td width="5%">Nombre de brevets</td>
-                    <td width="10%">Brevets</td>
+                    <th>Code</th>
+                    <th>Nom</th>
+                    <th>Nombre de brevets</th>
                 </tr>
             </thead>
             <tbody></tbody>
             <tfoot>
                 <tr>
-                    <td width="20%">Up</td>
-                    <td width="20%">Down</td>
-                    <td width="10%" id="totalNuts">0</td>
-                    <td width="10%" id="totalSubNuts">0</td>
-                    <td width="40%"><button>Back</button></td>
+                    <th id="totalNuts">0</th>
+                    <th id="totalBrevets">0</th>
                 </tr>
             </tfoot>
         </table>
-        <table id="listBrevets" border=1>
-            <thead>
-                <tr>
-                    <td width="10%">ID</td>
-                    <td width="30%">Applicant</td>
-                    <td width="40%">Titre du brevet</td>
-                    <td width="20%">Date de dépôt</td>
-                </tr>
-            </thead>
-            <tbody></tbody>
-            <tfoot>
-                <tr>
-                    <td width="40%"><button>Back</button></td>
-                    <td width="20%"><button>Prev</button></td>
-                    <td width="20%">0/0</td>
-                    <td width="20%"><button>Next</button></td>
-                </tr>
-            </tfoot>
-        </table>
+        <input type="number" id="annees_brevets" name="annees_brevets" value="2010">
     </div>
-	
-    <table id="listOverlay" border=1>
+    <table id="listOverlay">
         <thead>
             <tr>
                 <td>Code</td>
                 <td>Remove</td>
             </tr>
         </thead>
-        <tbody>
-
-        </tbody>
+        <tbody></tbody>
     </table>
-
-	
-    <select name="domaines_brevets" id="domaines_brevets">
-        <option value="na"></option>
-        <option value="A">Nécessités courantes de la vie</option>
-        <option value="B">Techniques industrielles diverses; transports</option>
-        <option value="C">Chimie; métallurgie</option>
-        <option value="D">Textiles; papier</option>
-        <option value="E">Constructions fixes</option>
-        <option value="F">Mécaniques; éclairage; chauffage; armement; sautage</option>
-        <option value="G">Physique</option>
-        <option value="H">Electricité</option>
-        <option value="Y">Nouveaux développements technologiques</option>
-    </select>
 </body>
 
 </html>
