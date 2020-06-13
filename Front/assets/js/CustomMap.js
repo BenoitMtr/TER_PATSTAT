@@ -8,8 +8,8 @@ class CustomMap extends ol.Map {
                 })
             ],
             view: new View({
-                center: fromLonLat([24.596220, 53.700813]), //center of europe
-                zoom: 4.5
+                center: fromLonLat([14, 53]),
+                zoom: 5
             })
         });
 
@@ -31,10 +31,10 @@ class CustomMap extends ol.Map {
                 geometry: feature.get('geometry')
             }),
             // Connection between NUTS
-            highlightLB: width => new Style({
+            highlightLB: (width, min, max) => new Style({
                 stroke: new Stroke({
                     color: 'rgba(0, 0, 0, 0.5)',
-                    width: width
+                    width: norm(width, min, max, 3, 50)
                 })
             }),
             // NUTS surface
@@ -114,21 +114,21 @@ class CustomMap extends ol.Map {
         }
     }
 
-    showCentroids(level = 0) {
-        const vecHash = this.formatCode.centroids(level);
+    showCentroids() {
+        const vecHash = this.formatCode.centroids(0);
         if (!this.vecCache.has(vecHash)) {
             let [min, max] = [Infinity, -Infinity];
-            const points_feat = nutsCache.get(":" + level).map(n => {
-                const nb_brevet = n.nb_brevet.get(domaineCode) || 0;
+            const points_feat = nuts.map(nut => {
+                const { code } = nut;
+                const nb_brevet = nbBrevet["y" + annee][domaineCode][code] || 0;
                 if (nb_brevet < min)
                     min = nb_brevet;
                 if (nb_brevet > max)
                     max = nb_brevet;
-                const feat = feature_cache.get("LB:" + n.level).getFeatureById(n.code);
+                const feat = feats.lb.getFeatureById(code);
                 feat.set("nb_brevet", nb_brevet);
                 return feat;
             });
-            console.log("centroids points_feats", points_feat);
 
             this.vecCache.set(vecHash, new VectorLayer({
                 source: new VectorSource({
@@ -140,49 +140,48 @@ class CustomMap extends ol.Map {
         this.addVec(vecHash);
     }
 
-    hideCentroids(level = 0) {
-        this.removeVec(this.formatCode.centroids(level));
+    hideCentroids() {
+        this.removeVec(this.formatCode.centroids(0));
     }
 
-    highlight(name, level = 0, nb_brevet = 0) {
+    highlight(name) {
         const vecName = this.formatCode.highlight(name);
         let vecHash = vecName + " LB";
         if (!this.vecCache.has(vecHash)) {
-            const collab = collabCache.get('na');
-            const featureLB = feature_cache.get("LB:" + level);
-            if (featureLB == null || collab[name] == null)
-                return;
-            const feat_high = featureLB.getFeatureById(name).getGeometry().getCoordinates();
+            const collab_nut = collab["y" + annee][domaineCode][name] || {};
+            const feat_high = feats.lb.getFeatureById(name).getGeometry().getCoordinates();
 
-            const geom_arr = collab[name].code.reduce((arr, code, i) => {
-                const feat = featureLB.getFeatureById(code);
+            let min_collab = Infinity;
+            let max_collab = -Infinity;
+            const geom_arr = Object.keys(collab_nut).reduce((arr, code) => {
+                const feat = feats.lb.getFeatureById(code);
                 if (feat == null) {
                     console.warn("No feature called", code);
                 } else {
                     const featObj = new Feature({
                         geometry: new LineString([feat_high, feat.getGeometry().getCoordinates()]),
-                        width: collab[name].nb[i]
+                        width: collab_nut[code]
                     });
+                    min_collab = Math.min(min_collab, collab_nut[code]);
+                    max_collab = Math.max(max_collab, collab_nut[code]);
                     arr.push(featObj);
                 }
                 return arr;
             }, []);
 
             this.vecCache.set(vecHash, new VectorLayer({
-                source: new VectorSource({
-                    features: geom_arr
-                }),
-                style: feat => this.style.highlightLB(feat.get('width'))
+                source: new VectorSource({ features: geom_arr }),
+                style: feat => this.style.highlightLB(feat.get('width'), min_collab, max_collab)
             }));
         }
         this.addVec(vecHash);
 
         if (!this.vecCache.has(vecHash = vecName + " RG"))
-            this.vecCache.set(vecHash, createVector(feature_cache.get("RG:" + level).getFeatureById(name), this.style.highlightRG));
+            this.vecCache.set(vecHash, createVector(feats.rg.getFeatureById(name), this.style.highlightRG));
         this.addVec(vecHash);
 
         if (!this.vecCache.has(vecHash = vecName + " CO"))
-            this.vecCache.set(vecHash, createVector(feature_cache.get("LB:" + level).getFeatureById(name), this.style.highlightName(name)));
+            this.vecCache.set(vecHash, createVector(feats.lb.getFeatureById(name), this.style.highlightName(name)));
         this.addVec(vecHash);
 
         return vecName;
@@ -192,28 +191,6 @@ class CustomMap extends ol.Map {
         const vecName = this.formatCode.highlight(name);
         ["LB", "RG", "CO"].forEach(hash => this.removeVec(vecName + " " + hash));
     }
-
-    showKML(url, name) {
-        const vecName = this.formatCode.KML(name);
-        // If VectorLayer not in cache create new
-        if (!this.vecCache.has(vecName)) {
-            this.vecCache.set(vecName, new VectorLayer({
-                source: new VectorSource({
-                    url: url,
-                    format: new KML({
-                        extractStyles: false
-                    })
-                }),
-                style: this.style.kml
-            }));
-        }
-        this.addVec(vecName);
-        return vecName;
-    }
-
-    hideKML(name) {
-        this.removeVec(this.formatCode.KML(name));
-    }
 }
 
 function createVector(features, style) {
@@ -221,13 +198,11 @@ function createVector(features, style) {
         source: new VectorSource({
             features: [features]
         }),
-        style: style
+        style
     });
 }
 
-const number_subfix = [
-    "", "k", "m", "B", "Bm"
-];
+const number_subfix = ["", "K", "M", "B", "T"];
 
 function formatNumber(value) {
     let idx = 0;
@@ -235,7 +210,7 @@ function formatNumber(value) {
         value /= 1e3;
         idx++;
     }
-    return value.toFixed(0) + number_subfix[idx];
+    return idx == 0 ? value.toString() : value.toFixed(2) + number_subfix[idx];
 }
 
 function norm(v, f1, f2, l1, l2) { return l1 + (l2 - l1) * ((v - f1) / (f2 - f1)); }
