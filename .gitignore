@@ -1,2 +1,5 @@
 .*
 node_modules
+Back/databaseFetcher/out
+Back/databaseFetcher/cred.js
+Back/geojson2016
