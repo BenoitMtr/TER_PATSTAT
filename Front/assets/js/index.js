@@ -1,12 +1,6 @@
 // Shortcut of the dependencies
-const { View, Overlay } = ol;
-const { Tile: TileLayer, Vector: VectorLayer } = ol.layer;
-const { Fill, Style, Stroke, Circle: CircleStyle, Text } = ol.style;
-const { OSM, Vector: VectorSource } = ol.source;
-const { KML, GeoJSON } = ol.format;
-const { fromLonLat } = ol.proj;
-const { LineString, MultiLineString, Point } = ol.geom;
-const { Feature } = ol;
+const { Vector: VectorSource } = ol.source;
+const { GeoJSON } = ol.format;
 const $ = e => document.querySelectorAll(e);
 
 const feats = {};
@@ -24,7 +18,6 @@ window.onload = _ => {
         .then(buf => Promise.all(buf.map(b => b.json())))
         .then(data => {
             [nuts, nbBrevet, collab] = data;
-            console.log(nuts);
             updateTbody(nuts);
             Promise.all(["rg", "lb"].map(arg => new Promise(async (resolve, reject) => {
                 try {

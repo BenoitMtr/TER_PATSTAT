@@ -1,3 +1,12 @@
+// Shortcut of the dependencies
+const { View } = ol;
+const { Tile: TileLayer, Vector: VectorLayer } = ol.layer;
+const { Fill, Style, Stroke, Circle: CircleStyle, Text } = ol.style;
+const { OSM } = ol.source;
+const { fromLonLat } = ol.proj;
+const { LineString } = ol.geom;
+const { Feature } = ol;
+
 class CustomMap extends ol.Map {
     constructor(elt) {
         super({
@@ -18,8 +27,8 @@ class CustomMap extends ol.Map {
 
         this.formatCode = {
             highlight: name => "Highlight " + name,
-            KML: name => "KML " + name,
-            centroids: level => "Centroids " + level,
+            centroids: _ => "Centroids",
+            centroidsCollab: name => "Centroids " + name,
             collab: (nuts_code, domaine) => `Collab ${nuts_code} : ${domaine}`
         };
 
@@ -62,6 +71,25 @@ class CustomMap extends ol.Map {
                     })
                 })
             }),
+            // Centroid collab
+            highlightCOCollab: (min, max) => feat => new Style({
+                image: new CircleStyle({
+                    radius: norm(feat.get("nb_collab"), min, max, 20, 50),
+                    fill: new Fill({
+                        color: 'rgba(0, 100, 255, 0.4)'
+                    })
+                }),
+                text: new Text({
+                    font: '22px Calibri,sans-serif',
+                    text: formatNumber(feat.get("nb_collab")),
+                    fill: new Fill({
+                        color: 'rgba(255, 255, 255, 1)'
+                    }),
+                    stroke: new Stroke({
+                        color: 'rgba(255, 255, 255, 1)'
+                    })
+                })
+            }),
             highlightName: name => new Style({
                 image: new CircleStyle({
                     radius: 20,
@@ -86,13 +114,11 @@ class CustomMap extends ol.Map {
     }
 
     reloadCache() {
-        const centroidsHash = this.formatCode.centroids(0);
-        if (this.displayedLayers.has(centroidsHash)) {
-            this.removeVec(centroidsHash);
-            this.vecCache.delete(centroidsHash);
-            this.showCentroids(0);
+        for (let layer of this.displayedLayers) {
+            this.removeVec(layer);
+            this.vecCache.delete(layer);
         }
-        // TODO Add all types ...
+        this.showCentroids();
     }
 
     removeVec(name) {
@@ -115,20 +141,23 @@ class CustomMap extends ol.Map {
     }
 
     showCentroids() {
-        const vecHash = this.formatCode.centroids(0);
+        const vecHash = this.formatCode.centroids();
         if (!this.vecCache.has(vecHash)) {
             let [min, max] = [Infinity, -Infinity];
-            const points_feat = nuts.map(nut => {
+            const points_feat = nuts.reduce((t, nut) => {
                 const { code } = nut;
                 const nb_brevet = nbBrevet["y" + annee][domaineCode][code] || 0;
-                if (nb_brevet < min)
-                    min = nb_brevet;
-                if (nb_brevet > max)
-                    max = nb_brevet;
-                const feat = feats.lb.getFeatureById(code);
-                feat.set("nb_brevet", nb_brevet);
-                return feat;
-            });
+                if (nb_brevet != 0) {
+                    if (nb_brevet < min)
+                        min = nb_brevet;
+                    if (nb_brevet > max)
+                        max = nb_brevet;
+                    const feat = feats.lb.getFeatureById(code);
+                    feat.set("nb_brevet", nb_brevet);
+                    t.push(feat);
+                }
+                return t;
+            }, []);
 
             this.vecCache.set(vecHash, new VectorLayer({
                 source: new VectorSource({
@@ -141,10 +170,47 @@ class CustomMap extends ol.Map {
     }
 
     hideCentroids() {
-        this.removeVec(this.formatCode.centroids(0));
+        this.removeVec(this.formatCode.centroids());
+    }
+
+    showCentroidsCollab(name) {
+        const vecHash = this.formatCode.centroidsCollab(name);
+        if (!this.vecCache.has(vecHash)) {
+            let [min, max] = [Infinity, -Infinity];
+            const points_feat = nuts.reduce((t, nut) => {
+                const { code } = nut;
+                if (code != name) {
+                    const collabs = collab["y" + annee][domaineCode][name];
+                    const nb_collab = collabs ? collabs[code] || 0 : 0;
+                    if (nb_collab != 0) {
+                        if (nb_collab < min)
+                            min = nb_collab;
+                        if (nb_collab > max)
+                            max = nb_collab;
+                        const feat = feats.lb.getFeatureById(code);
+                        feat.set("nb_collab", nb_collab);
+                        t.push(feat);
+                    }
+                }
+                return t;
+            }, []);
+
+            this.vecCache.set(vecHash, new VectorLayer({
+                source: new VectorSource({
+                    features: points_feat
+                }),
+                style: this.style.highlightCOCollab(min, max)
+            }));
+        }
+        this.addVec(vecHash);
+    }
+
+    hideCentroidsCollab(name) {
+        this.removeVec(this.formatCode.centroidsCollab(name));
     }
 
     highlight(name) {
+        this.hideCentroids();
         const vecName = this.formatCode.highlight(name);
         let vecHash = vecName + " LB";
         if (!this.vecCache.has(vecHash)) {
@@ -184,12 +250,15 @@ class CustomMap extends ol.Map {
             this.vecCache.set(vecHash, createVector(feats.lb.getFeatureById(name), this.style.highlightName(name)));
         this.addVec(vecHash);
 
+        this.showCentroidsCollab(name);
         return vecName;
     }
 
     unhighlight(name) {
         const vecName = this.formatCode.highlight(name);
         ["LB", "RG", "CO"].forEach(hash => this.removeVec(vecName + " " + hash));
+        this.hideCentroidsCollab(name);
+        this.showCentroids();
     }
 }
 
