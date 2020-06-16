@@ -4,7 +4,7 @@ const { Tile: TileLayer, Vector: VectorLayer } = ol.layer;
 const { Fill, Style, Stroke, Circle: CircleStyle, Text } = ol.style;
 const { OSM } = ol.source;
 const { fromLonLat } = ol.proj;
-const { LineString } = ol.geom;
+const { LineString, Point } = ol.geom;
 const { Feature } = ol;
 
 class CustomMap extends ol.Map {
@@ -153,8 +153,10 @@ class CustomMap extends ol.Map {
                     if (nb_brevet > max)
                         max = nb_brevet;
                     const feat = feats.lb.getFeatureById(code);
-                    feat.set("nb_brevet", nb_brevet);
-                    t.push(feat);
+                    t.push(new Feature({
+                        geometry: feat.getGeometry(),
+                        nb_brevet
+                    }));
                 }
                 return t;
             }, []);
@@ -188,8 +190,10 @@ class CustomMap extends ol.Map {
                         if (nb_collab > max)
                             max = nb_collab;
                         const feat = feats.lb.getFeatureById(code);
-                        feat.set("nb_collab", nb_collab);
-                        t.push(feat);
+                        t.push(new Feature({
+                            geometry: feat.getGeometry(),
+                            nb_collab
+                        }));
                     }
                 }
                 return t;
